@@ -69,44 +69,44 @@ const chordProgressions = {
         name: "II-V-I", 
         majorSteps: [2, 5, 1],
         minorSteps: [2, 5, 1],
-        color: "#ff0066" 
+        color: "#333333" 
     },
     "1-4-5": { 
         name: "I-IV-V", 
         majorSteps: [1, 4, 5],
         minorSteps: [1, 4, 5],
-        color: "#00ff66" 
+        color: "#333333" 
     },
     "1-6-4-5": { 
         name: "I-vi-IV-V", 
         majorSteps: [1, 6, 4, 5],
         minorSteps: [1, 6, 4, 5],
-        color: "#0066ff" 
+        color: "#333333"
     },
     // ДОБАВЬТЕ ЭТИ ПРОГРЕССИИ:
     "1-5-6-4": {
         name: "I-V-vi-IV",
         majorSteps: [1, 5, 6, 4],
         minorSteps: [1, 5, 6, 4],
-        color: "#ff9900"
+        color: "#333333"
     },
     "1-4-2-5": {
         name: "I-IV-ii-V",
         majorSteps: [1, 4, 2, 5],
         minorSteps: [1, 4, 2, 5],
-        color: "#cc00ff"
+        color: "#333333"
     },
     "6-2-5-1": {
         name: "vi-ii-V-I",
         majorSteps: [6, 2, 5, 1],
         minorSteps: [6, 2, 5, 1],
-        color: "#00ccff"
+        color: "#333333"
     },
     "1-3-6-2-5-1": {
         name: "I-iii-vi-ii-V-I",
         majorSteps: [1, 3, 6, 2, 5, 1],
         minorSteps: [1, 3, 6, 2, 5, 1],
-        color: "#ffcc00"
+        color: "#333333"
     }
 };
 
@@ -988,76 +988,160 @@ function drawKeyLabels(centerX, centerY, radius) {
 
 // Обновите drawKeyCircle для лучшего визуального отклика:
 function drawKeyCircle(x, y, radius, color, text, isMajor, isSelected, isHovered, isTopKey) {
-    // Увеличиваем радиус при hover
+    // 1. Определяем цвет из CSS-переменных
+    let computedColor;
+    
+    if (isMajor) {
+        // Для мажорных тональностей
+        // Создаем имя CSS-переменной (заменяем диез на sharp, бемоль на flat)
+        const keyName = text.replace('#', 'sharp').replace('b', 'flat').toLowerCase();
+        const cssVarName = `--key-${keyName}`;
+        
+        // Получаем значение из CSS
+        computedColor = getComputedStyle(document.documentElement)
+            .getPropertyValue(cssVarName)
+            .trim();
+        
+        // Если не нашли в CSS, используем старый цвет из данных
+        if (!computedColor || computedColor === '') {
+            computedColor = color;
+        }
+    } else {
+        // Для минорных тональностей
+        computedColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--key-minor')
+            .trim() || '#fc00ff'; // fallback
+    }
+    
+    // 2. Увеличиваем радиус при hover
     const displayRadius = isHovered ? radius * 1.1 : radius;
     
-    // Внешняя подсветка при hover
+    // 3. Внешняя подсветка при hover
     if (isHovered) {
         ctx.beginPath();
         ctx.arc(x, y, displayRadius + 15, 0, Math.PI * 2);
-        const gradient = ctx.createRadialGradient(x, y, displayRadius, x, y, displayRadius + 15);
-        gradient.addColorStop(0, color + '60');
-        gradient.addColorStop(1, color + '00');
+        const gradient = ctx.createRadialGradient(
+            x, y, displayRadius,
+            x, y, displayRadius + 15
+        );
+        gradient.addColorStop(0, computedColor + '60'); // 60 = 38% opacity
+        gradient.addColorStop(1, computedColor + '00'); // 00 = 0% opacity
         ctx.fillStyle = gradient;
         ctx.fill();
     }
     
-    // Особый эффект для тональности наверху
+    // 4. Особый эффект для тональности наверху
     if (isTopKey && isMajor) {
         ctx.beginPath();
         ctx.arc(x, y, displayRadius + 20, 0, Math.PI * 2);
-        const gradient = ctx.createRadialGradient(x, y, displayRadius, x, y, displayRadius + 20);
-        gradient.addColorStop(0, color + '60');
-        gradient.addColorStop(1, color + '00');
+        const gradient = ctx.createRadialGradient(
+            x, y, displayRadius,
+            x, y, displayRadius + 20
+        );
+        gradient.addColorStop(0, computedColor + '60');
+        gradient.addColorStop(1, computedColor + '00');
         ctx.fillStyle = gradient;
         ctx.fill();
     }
     
-    // Основной круг
+    // 5. Основной круг
     ctx.beginPath();
     ctx.arc(x, y, displayRadius, 0, Math.PI * 2);
     
+    // Определяем цвет заливки в зависимости от состояния
     if (isSelected) {
-        ctx.fillStyle = color;
+        ctx.fillStyle = computedColor; // Полная насыщенность
     } else if (isHovered) {
-        ctx.fillStyle = color + 'FF'; // Полная непрозрачность при hover
+        ctx.fillStyle = computedColor + 'FF'; // Полная непрозрачность при hover
     } else if (isTopKey && isMajor) {
-        ctx.fillStyle = color + 'FF';
+        ctx.fillStyle = computedColor + 'FF'; // Полная непрозрачность для верхней
     } else {
-        ctx.fillStyle = color + (isMajor ? 'CC' : 'AA'); // Мажор ярче минора
+        // Для неактивных: мажор ярче минора
+        ctx.fillStyle = computedColor + (isMajor ? 'CC' : 'AA');
     }
     
     ctx.fill();
     
-    // Обводка
+    // 6. Обводка
     ctx.beginPath();
     ctx.arc(x, y, displayRadius, 0, Math.PI * 2);
     
+    // Определяем цвет обводки
+    let strokeColor;
+    let lineWidth;
+    
     if (isTopKey && isMajor) {
-        ctx.strokeStyle = '#00ffcc';
-        ctx.lineWidth = 4;
+        // Верхняя тональность - яркая обводка
+        strokeColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--accent-primary')
+            .trim() || '#00ffcc';
+        lineWidth = 4;
     } else if (isSelected) {
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
+        strokeColor = '#ffffff';
+        lineWidth = 3;
     } else if (isHovered) {
-        ctx.strokeStyle = '#ffff00'; // Желтая обводка при hover
-        ctx.lineWidth = 3;
+        strokeColor = '#ffff00'; // Желтая обводка при hover
+        lineWidth = 3;
     } else {
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 2;
+        strokeColor = 'rgba(255,255,255,0.6)';
+        lineWidth = 2;
     }
     
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = lineWidth;
     ctx.stroke();
     
-    // Текст
-    ctx.fillStyle = (isSelected || isHovered || (isTopKey && isMajor)) ? '#000000' : '#ffffff';
+    // 7. Текст (название тональности)
+    // Определяем цвет текста
+    let textColor;
+    if (isSelected || isHovered || (isTopKey && isMajor)) {
+        // Для активных элементов - темный текст для контраста
+        textColor = '#000000';
+    } else {
+        textColor = '#ffffff';
+    }
+    
+    ctx.fillStyle = textColor;
     ctx.font = isMajor ? 'bold 18px Arial' : 'bold 16px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    
+    // Тень для лучшей читаемости
     ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
     ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    
+    // Рисуем текст
     ctx.fillText(text, x, y);
+    
+    // Сбрасываем тень
+    ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
+    
+    // 8. Дополнительный эффект для выбранной тональности
+    if (isSelected || (isTopKey && isMajor)) {
+        // Внутренняя подсветка
+        ctx.beginPath();
+        ctx.arc(x, y, displayRadius - 5, 0, Math.PI * 2);
+        
+        // Создаем градиент для свечения
+        const innerGradient = ctx.createRadialGradient(
+            x, y, displayRadius - 10,
+            x, y, displayRadius
+        );
+        innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+        innerGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.fillStyle = innerGradient;
+        ctx.fill();
+        
+        // Точечный эффект в центре
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+    }
 }
 
 

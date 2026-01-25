@@ -872,3 +872,60 @@ body.theme-changing {
     color: #000;
     border-color: #00ffcc;
 }
+
+
+:root {
+    /* Цвета мажорных тональностей */
+    --key-c: #00dbde;
+    --key-g: #00c4ff;
+    --key-d: #009dff;
+    --key-a: #0077ff;
+    --key-e: #0051ff;
+    --key-b: #002bff;
+    --key-fsharp: #5500ff;
+    --key-f: #ffcc00;
+    --key-bb: #ff9900;
+    --key-eb: #ff6600;
+    --key-ab: #ff3300;
+    --key-db: #ff0066;
+    --key-gb: #ff00aa;
+    
+    /* Цвет минорных тональностей */
+    --key-minor: #fc00ff;
+}
+
+/* Пример для темы Dracula */
+[data-theme="dracula"] {
+    --key-c: #50fa7b;
+    --key-g: #8be9fd;
+    --key-d: #bd93f9;
+    --key-a: #ff79c6;
+    --key-e: #ffb86c;
+    --key-b: #f1fa8c;
+    --key-fsharp: #6272a4;
+    --key-f: #44475a;
+    --key-bb: #282a36;
+    --key-eb: #50fa7b;
+    --key-ab: #8be9fd;
+    --key-db: #bd93f9;
+    --key-gb: #ff79c6;
+    --key-minor: #ff5555;
+}
+
+/* Пример для темы Zenburn */
+[data-theme="zenburn"] {
+    --key-c: #7cb8bb;
+    --key-g: #dfaf8f;
+    --key-d: #dca3a3;
+    --key-a: #cc9393;
+    --key-e: #9fafaf;
+    --key-b: #94bff3;
+    --key-fsharp: #8cd0d3;
+    --key-f: #709080;
+    --key-bb: #506070;
+    --key-eb: #a0b0c0;
+    --key-ab: #c0d0e0;
+    --key-db: #d0e0f0;
+    --key-gb: #e0f0ff;
+    --key-minor: #f0dfaf;
+}
