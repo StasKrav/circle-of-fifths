@@ -455,23 +455,54 @@ body.theme-changing {
   background: var(--card-bg);
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--card-border);
+  max-height: 400px; /* Ограничиваем высоту */
+  display: flex;
+  flex-direction: column;
 }
 
 .progressions-panel h3 {
   color: var(--accent-primary);
   margin-bottom: 15px;
   font-size: 1.2rem;
+  flex-shrink: 0;
 }
 
 .progressions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  overflow-y: auto; /* Вертикальный скролл */
+  padding-right: 5px;
+  flex-grow: 1;
 }
 
+/* Стили для скроллбара */
+.progressions-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.progressions-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.progressions-grid::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 3px;
+}
+
+.progressions-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-secondary);
+}
+
+/* Уменьшаем на мобильных */
 @media (max-width: 768px) {
   .progressions-grid {
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .progressions-panel {
+    max-height: 300px;
   }
 }
 
