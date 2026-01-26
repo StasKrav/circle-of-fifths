@@ -107,7 +107,114 @@ const chordProgressions = {
         majorSteps: [1, 3, 6, 2, 5, 1],
         minorSteps: [1, 3, 6, 2, 5, 1],
         color: "#333333"
-    }
+    },
+    
+        // ДОПОЛНИТЕЛЬНЫЕ ПРОГРЕССИИ:
+        "4-5-3-6": { 
+            name: "IV-V-iii-vi", 
+            majorSteps: [4, 5, 3, 6],
+            minorSteps: [4, 5, 3, 6],
+            color: "#333333",
+            description: "Каденция с плагальным оборотом"
+        },
+        "1-6-2-5": { 
+            name: "I-vi-ii-V", 
+            majorSteps: [1, 6, 2, 5],
+            minorSteps: [1, 6, 2, 5],
+            color: "#333333",
+            description: "Джазовая каденция"
+        },
+        "6-4-1-5": { 
+            name: "vi-IV-I-V", 
+            majorSteps: [6, 4, 1, 5],
+            minorSteps: [6, 4, 1, 5],
+            color: "#333333",
+            description: "Поп-рок прогрессия"
+        },
+        "1-4-6-5": { 
+            name: "I-IV-vi-V", 
+            majorSteps: [1, 4, 6, 5],
+            minorSteps: [1, 4, 6, 5],
+            color: "#333333",
+            description: "Классическая поп"
+        },
+        "2-6-4-5": { 
+            name: "ii-vi-IV-V", 
+            majorSteps: [2, 6, 4, 5],
+            minorSteps: [2, 6, 4, 5],
+            color: "#333333",
+            description: "Современная поп"
+        },
+        "4-1-5-6": { 
+            name: "IV-I-V-vi", 
+            majorSteps: [4, 1, 5, 6],
+            minorSteps: [4, 1, 5, 6],
+            color: "#333333",
+            description: "Альтернативный рок"
+        },
+        "1-5-4-5": { 
+            name: "I-V-IV-V", 
+            majorSteps: [1, 5, 4, 5],
+            minorSteps: [1, 5, 4, 5],
+            color: "#333333",
+            description: "Классическая рок"
+        },
+        "6-1-5-4": { 
+            name: "vi-I-V-IV", 
+            majorSteps: [6, 1, 5, 4],
+            minorSteps: [6, 1, 5, 4],
+            color: "#333333",
+            description: "Эмоциональная поп"
+        },
+        "1-3-4-5": { 
+            name: "I-iii-IV-V", 
+            majorSteps: [1, 3, 4, 5],
+            minorSteps: [1, 3, 4, 5],
+            color: "#333333",
+            description: "Светлая прогрессия"
+        },
+        "6-5-4-5": { 
+            name: "vi-V-IV-V", 
+            majorSteps: [6, 5, 4, 5],
+            minorSteps: [6, 5, 4, 5],
+            color: "#333333",
+            description: "Нарастающее напряжение"
+        },
+        "1-4-2-6": { 
+            name: "I-IV-ii-vi", 
+            majorSteps: [1, 4, 2, 6],
+            minorSteps: [1, 4, 2, 6],
+            color: "#333333",
+            description: "Плавная смена"
+        },
+        "5-4-1-6": { 
+            name: "V-IV-I-vi", 
+            majorSteps: [5, 4, 1, 6],
+            minorSteps: [5, 4, 1, 6],
+            color: "#333333",
+            description: "Реверсивная каденция"
+        },
+        "1-4-5-4": { 
+            name: "I-IV-V-IV", 
+            majorSteps: [1, 4, 5, 4],
+            minorSteps: [1, 4, 5, 4],
+            color: "#333333",
+            description: "Классический блюз"
+        },
+        "6-4-5-1": { 
+            name: "vi-IV-V-I", 
+            majorSteps: [6, 4, 5, 1],
+            minorSteps: [6, 4, 5, 1],
+            color: "#333333",
+            description: "Полная каденция"
+        },
+        "2-5-1-6": { 
+            name: "ii-V-I-vi", 
+            majorSteps: [2, 5, 1, 6],
+            minorSteps: [2, 5, 1, 6],
+            color: "#333333",
+            description: "Джазовая с плавным окончанием"
+        }
 };
 
 
