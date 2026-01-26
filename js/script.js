@@ -562,8 +562,6 @@ function getDegreeFunction(roman) {
 }
 
 // Функция для вычисления позиции
-// В script.js, замените функцию getKeyPosition:
-// ЗАМЕНИТЕ getKeyPosition на эту простую версию:
 function getKeyPosition(key, isMinor = false) {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -647,31 +645,21 @@ function updateRotation(deltaX) {
     state.rotationVelocity = rotationDelta * 2;
 }
 
-// Функция для анимации с инерцией
-// Вариант 2: Мгновенное прилипание без анимации
-
-function snapToTarget() {
-    state.rotation = calculateSnapRotation();
-    drawCircle();
-    updateTopKeyInfo();
-}
 
 // Упрощенная анимация с инерцией
 function animateWithInertia() {
     state.isAnimating = true;
     
     const animate = () => {
-        // Применяем инерцию
+        // Простая инерция
         state.rotation += state.rotationVelocity;
-        state.rotationVelocity *= 0.85; // Сильное демпфирование
+        state.rotationVelocity *= 0.9; // Быстрее замедляем
         
         drawCircle();
-        updateTopKeyInfo();
         
-        // Если скорость очень мала, завершаем
         if (Math.abs(state.rotationVelocity) < 0.01) {
             state.isAnimating = false;
-            snapToTarget(); // Мгновенное прилипание
+            snapToTarget();
             return;
         }
         
@@ -681,91 +669,13 @@ function animateWithInertia() {
     state.animationId = requestAnimationFrame(animate);
 }
 
-// Обработчик отпускания мыши
-document.addEventListener('mouseup', () => {
-    if (!state.isDragging) return;
-    
-    state.isDragging = false;
-    
-    // Если скорость высокая - продолжаем инерцию
-    if (Math.abs(state.rotationVelocity) > 0.1) {
-        animateWithInertia();
-    } else {
-        snapToTarget(); // Иначе мгновенное прилипание
-    }
-    
-    canvas.style.cursor = state.hoveredKey ? 'pointer' : 'grab';
-});
-
-// Колесо мыши
-canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    
-    if (state.isAnimating) {
-        cancelAnimationFrame(state.animationId);
-        state.isAnimating = false;
-    }
-    
-    state.rotation += e.deltaY * 0.002;
-    state.rotationVelocity = e.deltaY * 0.004;
-    
+function snapToTarget() {
+    // Просто устанавливаем позицию без анимации
+    state.rotation = calculateSnapRotation();
     drawCircle();
     updateTopKeyInfo();
-    
-    clearTimeout(state.wheelTimeout);
-    state.wheelTimeout = setTimeout(snapToTarget, 150);
-});
-
-// Улучшенная анимация к целевому вращению
-function animateToTarget() {
-    if (state.isAnimating) return;
-    
-    state.isAnimating = true;
-    state.targetRotation = calculateSnapRotation();
-    
-    // Вычисляем начальную скорость для плавного перехода
-    const angleDiff = normalizeAngle(state.targetRotation - state.rotation);
-    state.rotationVelocity = angleDiff * 0.15;
-    
-    const animate = (currentTime) => {
-        if (!state.lastTime) state.lastTime = currentTime;
-        const deltaTime = Math.min((currentTime - state.lastTime) / 1000, 0.033);
-        state.lastTime = currentTime;
-        
-        // Вычисляем разницу с целевым вращением
-        let diff = normalizeAngle(state.targetRotation - state.rotation);
-        
-        // Если мы близко к цели, применяем "прилипание"
-        if (Math.abs(diff) < SNAP_THRESHOLD) {
-            // Плавное завершение анимации
-            state.rotationVelocity += diff * 0.4 * deltaTime * 60;
-            state.rotationVelocity *= 0.92;
-            state.rotation += state.rotationVelocity;
-            
-            // Если достаточно близко, завершаем анимацию
-            if (Math.abs(diff) < 0.001 && Math.abs(state.rotationVelocity) < MIN_VELOCITY) {
-                state.rotation = state.targetRotation;
-                state.rotationVelocity = 0;
-                state.isAnimating = false;
-                state.lastTime = 0;
-                drawCircle();
-                updateTopKeyInfo();
-                return;
-            }
-        } else {
-            // Ускоренное движение к цели
-            state.rotationVelocity += diff * 0.6 * deltaTime * 60;
-            state.rotationVelocity *= 0.96;
-            state.rotation += state.rotationVelocity;
-        }
-        
-        drawCircle();
-        updateTopKeyInfo();
-        state.animationId = requestAnimationFrame(animate);
-    };
-    
-    state.animationId = requestAnimationFrame(animate);
 }
+
 
 // ПРОСТАЯ и понятная функция:
 function getKeyAtPosition(x, y) {
@@ -1051,37 +961,7 @@ function drawKeyCircle(x, y, radius, color, text, isMajor, isSelected, isHovered
     }
     
     ctx.fill();
-    
-    // // 6. Обводка
-    // ctx.beginPath();
-    // ctx.arc(x, y, displayRadius, 0, Math.PI * 2);
-    
-    // // Определяем цвет обводки
-    // let strokeColor;
-    // let lineWidth;
-    
-    // if (isTopKey && isMajor) {
-    //     // Верхняя тональность - яркая обводка
-    //     strokeColor = getComputedStyle(document.documentElement)
-    //         .getPropertyValue('--accent-primary')
-    //         .trim() || '#00ffcc';
-    //     lineWidth = 4;
-    // // } else if (isSelected) {
-    // //     strokeColor = '#ffffff';
-    // //     lineWidth = 3;
-    // // } else if (isHovered) {
-    // //     strokeColor = '#ffff00'; // Желтая обводка при hover
-    // //     lineWidth = 3;
-    // } else {
-    //     strokeColor = 'rgba(255,255,255,0.6)';
-    //     lineWidth = 2;
-    // }
-    
-    // ctx.strokeStyle = strokeColor;
-    // ctx.lineWidth = lineWidth;
-    // ctx.stroke();
-    
-    // 7. Текст (название тональности)
+
     // Определяем цвет текста
     let textColor;
     if (isSelected || isHovered || (isTopKey && isMajor)) {
@@ -1554,9 +1434,6 @@ function setupEventListeners() {
         // Если скорость достаточно высока, продолжаем инерцию
         if (Math.abs(state.rotationVelocity) > 0.02) {
             animateWithInertia();
-        } else {
-            // Иначе включаем "прилипание"
-            animateToTarget();
         }
         
         canvas.style.cursor = state.hoveredKey ? 'pointer' : 'grab';
