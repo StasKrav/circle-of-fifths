@@ -218,123 +218,6 @@ const state = {
     activeProgression: null,
 };
 
-// Добавьте в script.js после инициализации state:
-// Обновляем themeManager в script.js:
-const themeManager = {
-    currentTheme: 'default',
-    themes: [
-        { id: 'default', name: 'Тёмная', icon: '🌙' },
-        { id: 'dark', name: 'Тёмная+', icon: '🌌' },
-        { id: 'dracula', name: 'Dracula', icon: '🧛' },
-        { id: 'zenburn', name: 'Zenburn', icon: '🕯️' }
-    ],
-    
-    init() {
-        // Загружаем сохранённую тему или определяем системную
-        const savedTheme = localStorage.getItem('circleTheme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        this.currentTheme = savedTheme || (prefersDark ? 'default' : 'light');
-        this.setTheme(this.currentTheme);
-        this.createThemeSwitcher();
-        
-        // Слушаем изменения системной темы
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (!localStorage.getItem('circleTheme')) {
-                this.setTheme(e.matches ? 'default' : 'light');
-            }
-        });
-    },
-    
-    setTheme(themeName) {
-        if (!this.themes.find(t => t.id === themeName)) {
-            themeName = 'default'; // fallback
-        }
-        
-        this.currentTheme = themeName;
-        document.documentElement.setAttribute('data-theme', themeName);
-        localStorage.setItem('circleTheme', themeName);
-        
-        // Анимация смены темы
-        document.body.classList.add('theme-changing');
-        setTimeout(() => {
-            document.body.classList.remove('theme-changing');
-        }, 500);
-        
-        // Обновляем цвета канваса при смене темы
-        if (typeof drawCircle === 'function') {
-            setTimeout(drawCircle, 100);
-        }
-        
-        console.log(`Theme changed to: ${themeName}`);
-    },
-    
-    createThemeSwitcher() {
-        const switcher = document.createElement('div');
-        switcher.className = 'theme-switcher';
-        
-        // Создаём кнопки для всех тем
-        switcher.innerHTML = this.themes.map(theme => `
-            <button class="theme-btn" data-theme="${theme.id}" title="${theme.name}">
-                ${theme.icon}
-            </button>
-        `).join('');
-        
-        document.body.appendChild(switcher);
-        
-        // Обработчики кликов
-        switcher.querySelectorAll('.theme-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const theme = btn.getAttribute('data-theme');
-                this.setTheme(theme);
-                
-                // Обновляем активную кнопку
-                switcher.querySelectorAll('.theme-btn').forEach(b => {
-                    b.classList.remove('active');
-                });
-                btn.classList.add('active');
-                
-                // Анимация нажатия
-                btn.style.transform = 'scale(0.9)';
-                setTimeout(() => {
-                    btn.style.transform = '';
-                }, 200);
-            });
-        });
-        
-        // Устанавливаем активную кнопку
-        const activeBtn = switcher.querySelector(`[data-theme="${this.currentTheme}"]`);
-        if (activeBtn) activeBtn.classList.add('active');
-        
-        // Анимация появления
-        switcher.style.opacity = '0';
-        switcher.style.transform = 'translateY(-20px)';
-        setTimeout(() => {
-            switcher.style.transition = 'opacity 0.3s, transform 0.3s';
-            switcher.style.opacity = '1';
-            switcher.style.transform = 'translateY(0)';
-        }, 1000);
-    },
-    
-    // Функция для циклического переключения тем
-    cycleThemes() {
-        const currentIndex = this.themes.findIndex(t => t.id === this.currentTheme);
-        const nextIndex = (currentIndex + 1) % this.themes.length;
-        this.setTheme(this.themes[nextIndex].id);
-        
-        // Обновляем активную кнопку
-        const switcher = document.querySelector('.theme-switcher');
-        if (switcher) {
-            switcher.querySelectorAll('.theme-btn').forEach(b => {
-                b.classList.remove('active');
-            });
-            const activeBtn = switcher.querySelector(`[data-theme="${this.currentTheme}"]`);
-            if (activeBtn) activeBtn.classList.add('active');
-        }
-    }
-};
-
-
 
 // Константы
 const SNAP_ANGLE = Math.PI / 6;
@@ -1062,34 +945,34 @@ function drawKeyCircle(x, y, radius, color, text, isMajor, isSelected, isHovered
     
     ctx.fill();
     
-    // 6. Обводка
-    ctx.beginPath();
-    ctx.arc(x, y, displayRadius, 0, Math.PI * 2);
+    // // 6. Обводка
+    // ctx.beginPath();
+    // ctx.arc(x, y, displayRadius, 0, Math.PI * 2);
     
-    // Определяем цвет обводки
-    let strokeColor;
-    let lineWidth;
+    // // Определяем цвет обводки
+    // let strokeColor;
+    // let lineWidth;
     
-    if (isTopKey && isMajor) {
-        // Верхняя тональность - яркая обводка
-        strokeColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--accent-primary')
-            .trim() || '#00ffcc';
-        lineWidth = 4;
-    } else if (isSelected) {
-        strokeColor = '#ffffff';
-        lineWidth = 3;
-    } else if (isHovered) {
-        strokeColor = '#ffff00'; // Желтая обводка при hover
-        lineWidth = 3;
-    } else {
-        strokeColor = 'rgba(255,255,255,0.6)';
-        lineWidth = 2;
-    }
+    // if (isTopKey && isMajor) {
+    //     // Верхняя тональность - яркая обводка
+    //     strokeColor = getComputedStyle(document.documentElement)
+    //         .getPropertyValue('--accent-primary')
+    //         .trim() || '#00ffcc';
+    //     lineWidth = 4;
+    // // } else if (isSelected) {
+    // //     strokeColor = '#ffffff';
+    // //     lineWidth = 3;
+    // // } else if (isHovered) {
+    // //     strokeColor = '#ffff00'; // Желтая обводка при hover
+    // //     lineWidth = 3;
+    // } else {
+    //     strokeColor = 'rgba(255,255,255,0.6)';
+    //     lineWidth = 2;
+    // }
     
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
+    // ctx.strokeStyle = strokeColor;
+    // ctx.lineWidth = lineWidth;
+    // ctx.stroke();
     
     // 7. Текст (название тональности)
     // Определяем цвет текста
@@ -1677,7 +1560,7 @@ function init() {
     drawCircle();
     updateTopKeyInfo();
     setupEventListeners();
-    themeManager.init();
+    // themeManager.init();
     initProgressionsPanel();
 }
 
