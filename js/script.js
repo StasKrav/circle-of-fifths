@@ -1538,6 +1538,461 @@ function setupEventListeners() {
 }
 
 
+// Конфигурация - замени на свой email
+const CONFIG = {
+    email: "krav.stan@yandex.ru", // ЗАМЕНИ ЭТО НА СВОЙ EMAIL
+    telegram: "@StanKrav108",
+    subject: "Обратная связь: Квинтовый круг"
+};
+
+// Создаем и добавляем стили для модального окна
+function addFeedbackStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .feedback-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: var(--accent-primary);
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+        
+        .feedback-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .feedback-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .feedback-modal {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.4s ease;
+            overflow: hidden;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .feedback-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .feedback-header h3 {
+            margin: 0;
+            color: var(--accent-primary);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        
+        .feedback-body {
+            padding: 20px;
+        }
+        
+        .contact-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .contact-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--card-border);
+            border-radius: var(--border-radius-sm);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 100px;
+        }
+        
+        .contact-option:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent-primary);
+            transform: translateY(-3px);
+        }
+        
+        .contact-option span:first-child {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--card-border);
+        }
+        
+        .email-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius-sm);
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .email-display code {
+            flex-grow: 1;
+            font-family: monospace;
+            color: var(--accent-primary);
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+        
+        .copy-btn {
+            padding: 8px 15px;
+            background: var(--accent-primary);
+            color: #000;
+            border: none;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background: var(--accent-secondary);
+        }
+        
+        .hint {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 10px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .contact-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .feedback-modal {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Создаем кнопку обратной связи
+function createFeedbackButton() {
+    const btn = document.createElement('button');
+    btn.id = 'feedbackBtn';
+    btn.className = 'feedback-btn';
+    btn.innerHTML = '<span>Обратная связь</span>';
+    document.body.appendChild(btn);
+    return btn;
+}
+
+// Показывает модальное окно
+function showFeedbackModal() {
+    // Создаем оверлей
+    const overlay = document.createElement('div');
+    overlay.className = 'feedback-overlay';
+    
+    overlay.innerHTML = `
+        <div class="feedback-modal">
+            <div class="feedback-header">
+                <h3>Обратная связь</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            
+            <div class="feedback-body">
+                <p>Нашли ошибку? Есть предложения по улучшению? Свяжитесь со мной!</p>
+                
+                <div class="contact-options">
+                    <button class="contact-option" data-type="email">
+                        <span>📧</span>
+                        <span>Написать на email</span>
+                    </button>
+                    
+                    <button class="contact-option" data-type="telegram">
+                        <span>✈️</span>
+                        <span>Telegram</span>
+                    </button>
+                </div>
+                
+                <div class="contact-info" id="contactInfo">
+                    <div class="hint">Выберите способ связи</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Обработчики событий
+    const closeBtn = overlay.querySelector('.close-btn');
+    const contactOptions = overlay.querySelectorAll('.contact-option');
+    const contactInfo = overlay.querySelector('#contactInfo');
+    
+    // Закрытие модалки
+    function closeModal() {
+        overlay.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
+            }
+        }, 300);
+    }
+    
+    closeBtn.addEventListener('click', closeModal);
+    
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+    
+    // Обработка выбора способа связи
+    contactOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const type = this.dataset.type;
+            
+            // Сбрасываем выделение
+            contactOptions.forEach(opt => {
+                opt.style.background = '';
+                opt.style.borderColor = '';
+            });
+            
+            // Выделяем выбранный
+            this.style.background = 'rgba(124, 184, 187, 0.2)';
+            this.style.borderColor = 'var(--accent-primary)';
+            
+            // Показываем информацию о выбранном способе
+            if (type === 'email') {
+                showEmailInfo(contactInfo);
+            } else if (type === 'telegram') {
+                showTelegramInfo(contactInfo);
+            }
+        });
+    });
+    
+    // Закрытие по Escape
+    document.addEventListener('keydown', function closeOnEscape(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', closeOnEscape);
+        }
+    });
+    
+    // Добавляем стиль для анимации закрытия
+    if (!document.querySelector('#feedback-animations')) {
+        const animStyle = document.createElement('style');
+        animStyle.id = 'feedback-animations';
+        animStyle.textContent = `
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(animStyle);
+    }
+}
+
+// Показывает информацию для email
+function showEmailInfo(container) {
+    const encodedSubject = encodeURIComponent(CONFIG.subject);
+    const defaultBody = encodeURIComponent(
+        'Привет!\n\n' +
+        'Пишу по поводу твоего проекта "Квинтовый круг".\n\n' +
+        '---\n' +
+        'Отправлено из приложения: Квинтовый круг'
+    );
+    
+    const mailtoLink = `mailto:${CONFIG.email}?subject=${encodedSubject}&body=${defaultBody}`;
+    
+    container.innerHTML = `
+        <div class="hint">Напишите мне на email:</div>
+        
+        <div class="email-display">
+            <code id="emailValue">${CONFIG.email}</code>
+            <button class="copy-btn" id="copyEmailBtn">Копировать</button>
+        </div>
+        
+        <div class="hint">Или откройте почтовый клиент:</div>
+        
+        <a href="${mailtoLink}" target="_blank" style="
+            display: block;
+            padding: 12px;
+            background: var(--accent-primary);
+            color: #000;
+            text-align: center;
+            border-radius: var(--border-radius-sm);
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        ">
+            📧 Открыть почтовый клиент
+        </a>
+    `;
+    
+    // Копирование email
+    const copyBtn = container.querySelector('#copyEmailBtn');
+    copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(CONFIG.email).then(() => {
+            const originalText = this.textContent;
+            this.textContent = '✓ Скопировано!';
+            this.style.background = '#00cc00';
+            
+            setTimeout(() => {
+                this.textContent = originalText;
+                this.style.background = '';
+            }, 2000);
+        }).catch(err => {
+            console.error('Не удалось скопировать:', err);
+            this.textContent = 'Ошибка!';
+            this.style.background = '#ff4444';
+            
+            setTimeout(() => {
+                this.textContent = 'Копировать';
+                this.style.background = '';
+            }, 2000);
+        });
+    });
+}
+
+// Показывает информацию для Telegram
+function showTelegramInfo(container) {
+    const telegramLink = `https://t.me/${CONFIG.telegram.replace('@', '')}`;
+    
+    container.innerHTML = `
+        <div class="hint">Напишите мне в Telegram:</div>
+        
+        <div class="email-display">
+            <code id="telegramValue">${CONFIG.telegram}</code>
+            <button class="copy-btn" id="copyTelegramBtn">Копировать</button>
+        </div>
+        
+        <div class="hint">Или откройте Telegram:</div>
+        
+        <a href="${telegramLink}" target="_blank" style="
+            display: block;
+            padding: 12px;
+            background: #0088cc;
+            color: white;
+            text-align: center;
+            border-radius: var(--border-radius-sm);
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        ">
+            ✈️ Открыть Telegram
+        </a>
+    `;
+    
+    // Копирование Telegram username
+    const copyBtn = container.querySelector('#copyTelegramBtn');
+    copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(CONFIG.telegram).then(() => {
+            const originalText = this.textContent;
+            this.textContent = '✓ Скопировано!';
+            this.style.background = '#00cc00';
+            
+            setTimeout(() => {
+                this.textContent = originalText;
+                this.style.background = '';
+            }, 2000);
+        }).catch(err => {
+            console.error('Не удалось скопировать:', err);
+            this.textContent = 'Ошибка!';
+            this.style.background = '#ff4444';
+            
+            setTimeout(() => {
+                this.textContent = 'Копировать';
+                this.style.background = '';
+            }, 2000);
+        });
+    });
+}
+
+// Инициализация кнопки обратной связи
+function initFeedbackButton() {
+    // Добавляем стили
+    addFeedbackStyles();
+    
+    // Создаем кнопку
+    const feedbackBtn = createFeedbackButton();
+    
+    // Назначаем обработчик
+    feedbackBtn.addEventListener('click', showFeedbackModal);
+}
+
 
 // Инициализация
 function init() {
@@ -1546,6 +2001,7 @@ function init() {
     setupEventListeners();
     // themeManager.init();
     initProgressionsPanel();
+    initFeedbackButton();
 }
 
 // Запуск при загрузке
