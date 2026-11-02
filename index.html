@@ -4,27 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Квинтовый Круг</title>
-	<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <!-- <div class="mode-indicator" id="modeIndicator">Ступени лада</div> -->
-
     <div class="container">
       <div class="main-content">
         <div class="circle-container">
-          <canvas id="circleCanvas" width="800" height="800"></canvas>
+          <canvas id="circleCanvas"></canvas>
           <div class="center-marker"></div>
           <div class="snap-indicator" id="snapIndicator"></div>
-          <div class="drag-hint">Клик для выбора тональности</div>
+          <div class="relation-legend" id="relationLegend">
+            <div class="legend-item" data-degree="1">
+              <div class="legend-swatch degree-1"></div>
+              <span>1-я степень</span>
+            </div>
+            <div class="legend-item" data-degree="2">
+              <div class="legend-swatch degree-2"></div>
+              <span>2-я степень</span>
+            </div>
+          </div>
         </div>
 
         <div class="info-panel">
           <div class="key-display">
             <div class="selected-key" id="selectedKey">C-dur</div>
-            <div class="key-description" id="keyDescription">
-              <!-- Здесь будут знаки альтерации -->
-            </div>
+            <div class="key-description" id="keyDescription"></div>
           </div>
 
           <div class="chords-section">
@@ -37,33 +42,25 @@
             <div class="progressions-grid">
               <button class="progression-btn" data-progression="2-5-1">
                 <span class="progression-name">II-V-I</span>
-                <!-- <span class="progression-desc">Джазовая</span> -->
               </button>
               <button class="progression-btn" data-progression="1-4-5">
                 <span class="progression-name">I-IV-V</span>
-                <!-- <span class="progression-desc">Блюзовая</span> -->
               </button>
               <button class="progression-btn" data-progression="1-6-4-5">
                 <span class="progression-name">I-vi-IV-V</span>
-                <!-- <span class="progression-desc">Поп 50s</span> -->
               </button>
               <button class="progression-btn" data-progression="1-5-6-4">
                 <span class="progression-name">I-V-vi-IV</span>
-                <!-- <span class="progression-desc">Современная</span> -->
               </button>
               <button class="progression-btn" data-progression="1-4-2-5">
                 <span class="progression-name">I-IV-ii-V</span>
-                <!-- <span class="progression-desc">Джаз</span> -->
               </button>
               <button class="progression-btn" data-progression="6-2-5-1">
                 <span class="progression-name">vi-ii-V-I</span>
-                <!-- <span class="progression-desc">Минорная</span> -->
               </button>
               <button class="progression-btn" data-progression="1-3-6-2-5-1">
                 <span class="progression-name">I-iii-vi-ii-V-I</span>
-                <!-- <span class="progression-desc">Turnaround</span> -->
               </button>
-              <!-- Дополнительные прогрессии -->
               <button class="progression-btn" data-progression="4-5-3-6">
                 <span class="progression-name">IV-V-iii-vi</span>
               </button>
@@ -101,6 +98,5 @@
     </div>
 
     <script src="js/script.js"></script>
-
   </body>
 </html>
