@@ -31,20 +31,21 @@
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
 
-  /* Цвета тональностей (мажор) */
-  --key-c: #7cb8bb;
-  --key-g: #dfaf8f;
-  --key-d: #dca3a3;
-  --key-a: #cc9393;
-  --key-e: #9fafaf;
-  --key-b: #94bff3;
-  --key-fsharp: #8cd0d3;
-  --key-f: #709080;
-  --key-bb: #506070;
-  --key-eb: #a0b0c0;
-  --key-ab: #c0d0e0;
-  --key-db: #d0e0f0;
-  --key-gb: #e0f0ff;
+  --key-c: #6bb8b8; /* 12 ч — бирюза */
+  --key-g: #6bb88f; /*  1 ч — зелёно-бирюзовый */
+  --key-d: #8fbf6b; /*  2 ч — зелёный */
+  --key-a: #bfbf6b; /*  3 ч — жёлто-зелёный */
+  --key-e: #bf9f6b; /*  4 ч — жёлто-оранжевый */
+  --key-b: #bf8060; /*  5 ч — оранжевый */
+  --key-fsharp: #bf6050; /*  6 ч — красно-оранжевый (самый тёплый) */
+
+  /* Левая сторона (против часовой) — холодные */
+  --key-f: #6ba5b8; /* 11 ч — бирюзово-голубой */
+  --key-bb: #6b95b8; /* 10 ч — голубой */
+  --key-eb: #6b85b8; /*  9 ч — голубо-синий */
+  --key-ab: #6b75b8; /*  8 ч — синий */
+  --key-db: #6b65b8; /*  7 ч — сине-фиолетовый */
+  --key-gb: #856bb8; /*  6 ч (напротив C) — фиолетовый */
 
   /* Цвет минорных тональностей */
   --key-minor: #f0dfaf;
@@ -56,13 +57,14 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: hidden;
 }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--primary-bg);
   color: var(--text-color);
   transition: background var(--transition-slow);
@@ -97,11 +99,7 @@ body {
 #circleCanvas {
   display: block;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0) 70%
-  );
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
   filter: drop-shadow(0 0 40px rgba(0, 219, 222, 0.2));
   cursor: pointer;
   transition: filter var(--transition-normal);
@@ -132,11 +130,7 @@ body {
   text-align: center;
   padding: 10px 8px;
   margin-bottom: 10px;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 219, 222, 0.1),
-    rgba(252, 0, 255, 0.1)
-  );
+  background: linear-gradient(135deg, rgba(0, 219, 222, 0.1), rgba(252, 0, 255, 0.1));
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--card-border);
 }
@@ -179,10 +173,21 @@ body {
   font-weight: bold;
 }
 
-.sharp-icon { color: var(--accent-primary); }
-.flat-icon  { color: var(--accent-secondary); }
-.note-name  { color: var(--text-color); font-weight: 500; }
-.no-signs   { color: var(--text-secondary); font-style: italic; font-size: 0.75rem; }
+.sharp-icon {
+  color: var(--accent-primary);
+}
+.flat-icon {
+  color: var(--accent-secondary);
+}
+.note-name {
+  color: var(--text-color);
+  font-weight: 500;
+}
+.no-signs {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.75rem;
+}
 
 /* Аккорды — фиксированы */
 .chords-section {
@@ -335,8 +340,9 @@ body {
 .relation-legend {
   position: absolute;
   bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: auto;
+  right: 20px; /* отступ от правого края */
+  transform: none;
   display: flex;
   gap: 16px;
   padding: 6px 14px;
@@ -376,6 +382,15 @@ body {
   flex-shrink: 0;
 }
 
+.legend-swatch.pentatonic-swatch {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+  background: #e05050;
+  box-shadow: none;
+}
+
 .legend-swatch.degree-1 {
   border-color: #f0dfaf;
   box-shadow: 0 0 8px rgba(240, 223, 175, 0.6);
@@ -384,4 +399,63 @@ body {
 .legend-swatch.degree-2 {
   border-color: #94bff3;
   border-style: dashed;
+}
+
+.pentatonic-hint {
+  position: absolute;
+  bottom: 40px; /* над relation-legend, если он там */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pentatonic-section {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.pentatonic-section h3 {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.pentatonic-notes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.pentatonic-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px;
+  background: var(--hover-bg);
+  border: 1px solid #e05050; /* красный — как полоска на круге */
+  border-radius: 6px;
+  line-height: 1.15;
+}
+
+.pentatonic-degree {
+  font-size: 0.6rem;
+  color: #ffffff;
+  font-weight: normal;
+}
+
+.pentatonic-name {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #ffaaaa;
 }

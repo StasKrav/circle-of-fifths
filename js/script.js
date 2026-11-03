@@ -289,10 +289,6 @@ const keySignatures = {
   Gb: { sharps: [], flats: ['Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'] },
 }
 
-// ⚠️ Удалено: harmonicDominantMap, enharmonicPairs — вернём вместе с
-// «призрачными» нотами (гармоническая доминанта, мажорная призрачная и т.п.)
-// Задел: рисовать их как наложение поверх сектора через drawSegment
-// с fillAlpha и отдельной обводкой.
 
 const state = {
   selectedKey: 'C',
@@ -308,6 +304,7 @@ const state = {
   activeProgression: null,
   showDegree1: false,
   showDegree2: false,
+  showPentatonic: false,
 }
 
 // ---------- Константы геометрии ----------
@@ -337,7 +334,7 @@ function getRadii() {
   const { w, h } = canvasSize()
   const R = Math.min(w, h) / 2
   return {
-    outerMajor: R * 0.94,
+    outerMajor: R * 0.92,
     innerMajor: R * 0.63, // увеличен зазор
     outerMinor: R * 0.55, // увеличен зазор
     innerMinor: R * 0.26,
@@ -345,6 +342,10 @@ function getRadii() {
     majorText: R * 0.055, // базовый размер шрифта названия мажора
     minorText: R * 0.042, // минорного
     degreeText: R * 0.032, // ступеней
+
+    // ⚙️ Кольцо пентатоники — над внешним мажорным кольцом
+    pentatonicInner: R * 0.945,
+    pentatonicOuter: R * 0.975,
   }
 }
 
@@ -454,9 +455,11 @@ function getActiveRelatedKeys(currentKey, isCurrentMinor) {
 // ---------- CSS-цвета тональностей ----------
 
 function getMajorColorCSS(majorName) {
-  const key = majorName.replace('#', 'sharp').replace('b', 'flat').toLowerCase()
+  const key = majorName.replace('#', 'sharp').toLowerCase()
   return (
-    getComputedStyle(document.documentElement).getPropertyValue(`--key-${key}`).trim() || '#7cb8bb'
+    getComputedStyle(document.documentElement)
+      .getPropertyValue(`--key-${key}`)
+      .trim() || '#7cb8bb'
   )
 }
 
@@ -539,6 +542,7 @@ function updateTopKeyInfo() {
     updateChordGrid(chords[currentKey] || [], chordDegrees[currentKey] || chordDegrees['Am'], false)
   }
   updateKeySignatures(keySignatures[topKey.major] || { sharps: [], flats: [] })
+  updatePentatonicPanel()
 }
 
 function updateKeySignatures(signs) {
@@ -679,6 +683,38 @@ function animateWithInertia() {
   state.animationId = requestAnimationFrame(animate)
 }
 
+const PENTATONIC_INDEXES_MAJOR = [0, 1, 2, 4, 5]
+const PENTATONIC_INDEXES_MINOR = [0, 2, 3, 4, 6]
+const PENTATONIC_LABELS_MAJOR = ['1', '2', '3', '5', '6']
+const PENTATONIC_LABELS_MINOR = ['1', '♭3', '4', '5', '♭7']
+
+function updatePentatonicPanel() {
+  const container = document.getElementById('pentatonicNotes')
+  if (!container) return
+
+  const isMajor = !state.selectedIsMinor
+  const keyName = state.selectedKey
+  const keyChords = chords[keyName] || []
+  if (keyChords.length < 7) {
+    container.innerHTML = ''
+    return
+  }
+
+  const indexes = isMajor ? PENTATONIC_INDEXES_MAJOR : PENTATONIC_INDEXES_MINOR
+  const labels = isMajor ? PENTATONIC_LABELS_MAJOR : PENTATONIC_LABELS_MINOR
+
+  container.innerHTML = indexes.map((idx, i) => {
+    const chordName = keyChords[idx]
+    const noteName = chordName.replace(/[m°]/g, '').trim()
+    return `
+      <div class="pentatonic-note">
+        <div class="pentatonic-degree">${labels[i]}</div>
+        <div class="pentatonic-name">${noteName}</div>
+      </div>
+    `
+  }).join('')
+}
+
 // ---------- Полярный hit-тест ----------
 
 function getKeyAtPosition(x, y) {
@@ -745,50 +781,86 @@ function drawWedge(
 
 function drawRelationWedges(cx, cy) {
   const r = getRadii()
-  const currentKeyData = circleData.keys.find(k =>
-    state.selectedIsMinor ? k.minor === state.selectedKey : k.major === state.selectedKey,
-  )
-  if (!currentKeyData) return
+  const tonicAngle = -Math.PI / 2
+  const HALF_1ST = Math.PI / 4          // 45° — 3 сектора (11ч, 12ч, 1ч)
+  const HALF_2ND = Math.PI / 12         // 15° — 1 сектор (10ч или 2ч)
+  const OFFSET_2ND = Math.PI / 3        // 60° — центр на 10ч / 2ч
 
-  const tonicAngle = currentKeyData.angle + state.rotation
-  const HALF_90 = Math.PI / 4 // 45° = половина 90°
-
-  // ═══ 1-я степень: 90° по центру тоники ═══
+  // ═══ 1-я степень: 3 сектора по центру тоники ═══
   if (state.showDegree1) {
-    // Мажорное кольцо
-    drawWedge(cx, cy, r.innerMajor, r.outerMajor, tonicAngle, HALF_90, {
+    drawWedge(cx, cy, r.innerMajor, r.outerMajor, tonicAngle, HALF_1ST, {
       fill: 'rgba(255, 217, 94, 0.30)',
       stroke: '#ffd95e',
       lineWidth: 3,
     })
-    // Минорное кольцо
-    drawWedge(cx, cy, r.innerMinor, r.outerMinor, tonicAngle, HALF_90, {
+    drawWedge(cx, cy, r.innerMinor, r.outerMinor, tonicAngle, HALF_1ST, {
       fill: 'rgba(255, 217, 94, 0.30)',
       stroke: '#ffd95e',
       lineWidth: 3,
     })
   }
 
-  // ═══ 2-я степень: два 90° клина слева и справа ═══
+  // ═══ 2-я степень: по 1 сектору слева и справа ═══
   if (state.showDegree2) {
-    // левый клин: центр на tonicAngle - 90°  (т.е. -180°..-90°..-45°)
-    // правый клин: центр на tonicAngle + 90°
-    ;[-Math.PI / 2, Math.PI / 2].forEach(offset => {
+    ;[-OFFSET_2ND, OFFSET_2ND].forEach(offset => {
       const center = tonicAngle + offset
-      drawWedge(cx, cy, r.innerMajor, r.outerMajor, center, HALF_90, {
+      drawWedge(cx, cy, r.innerMajor, r.outerMajor, center, HALF_2ND, {
         fill: 'rgba(94, 200, 255, 0.22)',
         stroke: '#5ec8ff',
-        lineWidth: 2.5,
-        dash: [8, 5],
+        lineWidth: 2,
+        dash: [4, 3],
       })
-      drawWedge(cx, cy, r.innerMinor, r.outerMinor, center, HALF_90, {
+      drawWedge(cx, cy, r.innerMinor, r.outerMinor, center, HALF_2ND, {
         fill: 'rgba(94, 200, 255, 0.22)',
         stroke: '#5ec8ff',
-        lineWidth: 2.5,
-        dash: [8, 5],
+        lineWidth: 2,
+        dash: [4, 3],
       })
     })
   }
+}
+
+function drawPhantomNotes(cx, cy) {
+  if (!state.showDegree2) return
+  const r = getRadii()
+
+  // Тоника на 12ч (после snap) — призрачная нота всегда на фиксированном угле
+  const a = state.selectedIsMinor
+    ? -Math.PI / 2 + (4 * Math.PI) / 6    // минор → 04:00 в мажорном кольце
+    : -Math.PI / 2 - (4 * Math.PI) / 6    // мажор → 08:00 в минорном кольце
+
+  // Кольцо: для мажора — минорное, для минора — мажорное
+  const rIn = state.selectedIsMinor ? r.innerMajor : r.innerMinor
+  const rOut = state.selectedIsMinor ? r.outerMajor : r.outerMinor
+
+  const HALF = SEGMENT_HALF - 0.03   // чуть уже сектора
+
+  // 1. Полупрозрачная заливка
+  ctx.beginPath()
+  ctx.arc(cx, cy, rOut, a - HALF, a + HALF)
+  ctx.arc(cx, cy, rIn, a + HALF, a - HALF, true)
+  ctx.closePath()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.22)'
+  ctx.fill()
+
+  // 2. Пунктирная фиолетовая обводка
+  ctx.strokeStyle = '#c8a0ff'
+  ctx.lineWidth = 2
+  ctx.setLineDash([4, 4])
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  // 3. Значок: 'iv' для мажора, 'V' для минора
+  const label = state.selectedIsMinor ? 'V' : 'iv'
+  const midR = (rIn + rOut) / 2
+  const labelR = midR + (rOut - rIn) * 0.35
+  const lx = cx + Math.cos(a) * labelR
+  const ly = cy + Math.sin(a) * labelR
+  ctx.fillStyle = '#c8a0ff'
+  ctx.font = 'bold 12px Arial'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, lx, ly)
 }
 
 function drawCircle() {
@@ -796,7 +868,9 @@ function drawCircle() {
   ctx.clearRect(0, 0, w, h)
   drawBackgroundCircles(w / 2, h / 2)
   drawSegments(w / 2, h / 2)
-  drawRelationWedges(w / 2, h / 2) // ⚙️
+  drawPhantomNotes(w / 2, h / 2)         // ⚙️ призрачные — статично
+  drawPentatonicStripes(w / 2, h / 2)
+  drawRelationWedges(w / 2, h / 2)
   drawProgressionArrows()
 }
 
@@ -1012,6 +1086,25 @@ function drawSegments(cx, cy) {
   })
 }
 
+
+
+function drawPentatonicStripes(cx, cy) {
+  if (!state.showPentatonic) return 
+  const r = getRadii()
+
+  // Дуга от 12 до 16 часов — фиксированная, не зависит от вращения.
+  // 12ч = -π/2, 16ч = -π/2 + 4·(π/6) = -π/2 + 2π/3
+  const a0 = -Math.PI / 2
+  const a1 = -Math.PI / 2 + (4 * Math.PI) / 6   // 4 сектора по 30°
+
+  ctx.beginPath()
+  ctx.arc(cx, cy, r.pentatonicOuter, a0, a1)
+  ctx.arc(cx, cy, r.pentatonicInner, a1, a0, true)
+  ctx.closePath()
+  ctx.fillStyle = '#e05050'
+  ctx.fill()
+}
+
 // ---------- Стрелки прогрессий ----------
 
 function drawProgressionArrows() {
@@ -1206,20 +1299,27 @@ function setupEventListeners() {
   )
 
   document.querySelectorAll('.relation-legend .legend-item').forEach(item => {
-    const degree = parseInt(item.dataset.degree)
-    item.addEventListener('click', () => {
-      if (degree === 1) {
-        state.showDegree1 = !state.showDegree1
-        item.classList.toggle('disabled', !state.showDegree1)
-      } else if (degree === 2) {
-        state.showDegree2 = !state.showDegree2
-        item.classList.toggle('disabled', !state.showDegree2)
-      }
-      drawCircle()
-    })
-    if (degree === 1 && !state.showDegree1) item.classList.add('disabled')
-    if (degree === 2 && !state.showDegree2) item.classList.add('disabled')
+  const kind = item.dataset.degree    // '1', '2' или 'pentatonic'
+
+  item.addEventListener('click', () => {
+    if (kind === '1') {
+      state.showDegree1 = !state.showDegree1
+      item.classList.toggle('disabled', !state.showDegree1)
+    } else if (kind === '2') {
+      state.showDegree2 = !state.showDegree2
+      item.classList.toggle('disabled', !state.showDegree2)
+    } else if (kind === 'pentatonic') {
+      state.showPentatonic = !state.showPentatonic
+      item.classList.toggle('disabled', !state.showPentatonic)
+    }
+    drawCircle()
   })
+
+  // начальное состояние
+  if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
+  if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
+  if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
+})
 
   window.addEventListener('resize', resizeCanvas)
 }
