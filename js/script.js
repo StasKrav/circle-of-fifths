@@ -468,6 +468,10 @@ function getMinorColorCSS() {
   )
 }
 
+function cssVar(name, fallback = '') {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+
 // ---------- Позиция центра сектора (для стрелок прогрессий) ----------
 
 function getKeyPosition(key, isMinor = false) {
@@ -769,14 +773,18 @@ function drawTritone(cx, cy) {
   // Подсветить в ОБОИХ кольцах (тритон от ноты не зависит от лада)
   const HALF = SEGMENT_HALF - 0.03
 
+  const trFill = cssVar('--opt-tritone-fill', 'rgba(124, 184, 187, 0.28)')
+  const trStroke = cssVar('--opt-tritone-stroke', '#7cb8bb')
+  const trText = cssVar('--opt-tritone-text', '#7cb8bb')
+
   const drawTritoneSector = (rIn, rOut) => {
     ctx.beginPath()
     ctx.arc(cx, cy, rOut, tritoneAngle - HALF, tritoneAngle + HALF)
     ctx.arc(cx, cy, rIn, tritoneAngle + HALF, tritoneAngle - HALF, true)
     ctx.closePath()
-    ctx.fillStyle = 'rgba(124, 184, 187, 0.28)'
+    ctx.fillStyle = trFill
     ctx.fill()
-    ctx.strokeStyle = '#7cb8bb'
+    ctx.strokeStyle = trStroke
     ctx.lineWidth = 2
     ctx.setLineDash([3, 3])
     ctx.stroke()
@@ -789,7 +797,7 @@ function drawTritone(cx, cy) {
   const midR = (r.innerMajor + r.outerMajor) / 2
   const lx = cx + Math.cos(tritoneAngle) * midR
   const ly = cy + Math.sin(tritoneAngle) * midR
-  ctx.fillStyle = '#7cb8bb'
+  ctx.fillStyle = trText
   ctx.font = 'bold 12px Arial'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -816,8 +824,8 @@ function drawTritoneSub(cx, cy) {
   const rOut = r.outerMajor
 
   // Цвет — фиолетово-розовый, чтобы отличать от других зон
-  const COLOR = '#ffffff'
-  const FILL = 'rgba(192, 96, 192, 0.28)'
+  const COLOR = cssVar('--opt-ttsub-stroke', '#ffffff')
+  const FILL = cssVar('--opt-ttsub-fill', 'rgba(192, 96, 192, 0.28)')
 
   // Рисуем сектор
   const drawSector = angle => {
@@ -906,15 +914,20 @@ function drawRelationWedges(cx, cy) {
   const OFFSET_2ND = Math.PI / 3 // 60° — центр на 10ч / 2ч
 
   // ═══ 1-я степень: 3 сектора по центру тоники ═══
+  const d1Fill = cssVar('--opt-degree1-fill', 'rgba(255, 217, 94, 0.30)')
+  const d1Stroke = cssVar('--opt-degree1-stroke', '#ffd95e')
+  const d2Fill = cssVar('--opt-degree2-fill', 'rgba(94, 200, 255, 0.22)')
+  const d2Stroke = cssVar('--opt-degree2-stroke', '#5ec8ff')
+
   if (state.showDegree1) {
     drawWedge(cx, cy, r.innerMajor, r.outerMajor, tonicAngle, HALF_1ST, {
-      fill: 'rgba(255, 217, 94, 0.30)',
-      stroke: '#ffd95e',
+      fill: d1Fill,
+      stroke: d1Stroke,
       lineWidth: 3,
     })
     drawWedge(cx, cy, r.innerMinor, r.outerMinor, tonicAngle, HALF_1ST, {
-      fill: 'rgba(255, 217, 94, 0.30)',
-      stroke: '#ffd95e',
+      fill: d1Fill,
+      stroke: d1Stroke,
       lineWidth: 3,
     })
   }
@@ -924,14 +937,14 @@ function drawRelationWedges(cx, cy) {
     ;[-OFFSET_2ND, OFFSET_2ND].forEach(offset => {
       const center = tonicAngle + offset
       drawWedge(cx, cy, r.innerMajor, r.outerMajor, center, HALF_2ND, {
-        fill: 'rgba(94, 200, 255, 0.22)',
-        stroke: '#5ec8ff',
+        fill: d2Fill,
+        stroke: d2Stroke,
         lineWidth: 4,
         dash: [8, 5],
       })
       drawWedge(cx, cy, r.innerMinor, r.outerMinor, center, HALF_2ND, {
-        fill: 'rgba(94, 200, 255, 0.22)',
-        stroke: '#5ec8ff',
+        fill: d2Fill,
+        stroke: d2Stroke,
         lineWidth: 4,
         dash: [8, 5],
       })
@@ -953,17 +966,20 @@ function drawPhantomNotes(cx, cy) {
   const rOut = state.selectedIsMinor ? r.outerMajor : r.outerMinor
 
   const HALF = SEGMENT_HALF - 0.03 // чуть уже сектора
+  const phFill = cssVar('--opt-phantom-fill', 'rgba(255, 255, 255, 0.22)')
+  const phStroke = cssVar('--opt-phantom-stroke', '#c8a0ff')
+  const phText = cssVar('--opt-phantom-text', '#c8a0ff')
 
   // 1. Полупрозрачная заливка
   ctx.beginPath()
   ctx.arc(cx, cy, rOut, a - HALF, a + HALF)
   ctx.arc(cx, cy, rIn, a + HALF, a - HALF, true)
   ctx.closePath()
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.22)'
+  ctx.fillStyle = phFill
   ctx.fill()
 
   // 2. Пунктирная фиолетовая обводка
-  ctx.strokeStyle = '#c8a0ff'
+  ctx.strokeStyle = phStroke
   ctx.lineWidth = 4
   ctx.setLineDash([8, 5])
   ctx.stroke()
@@ -975,7 +991,7 @@ function drawPhantomNotes(cx, cy) {
   const labelR = midR + (rOut - rIn) * 0.35
   const lx = cx + Math.cos(a) * labelR
   const ly = cy + Math.sin(a) * labelR
-  ctx.fillStyle = '#c8a0ff'
+  ctx.fillStyle = phText
   ctx.font = 'bold 12px Arial'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -1220,7 +1236,7 @@ function drawPentatonicStripes(cx, cy) {
   ctx.arc(cx, cy, r.pentatonicOuter, a0, a1)
   ctx.arc(cx, cy, r.pentatonicInner, a1, a0, true)
   ctx.closePath()
-  ctx.fillStyle = '#e05050'
+  ctx.fillStyle = cssVar('--opt-pentatonic-color', '#e05050')
   ctx.fill()
 }
 
@@ -1418,42 +1434,69 @@ function setupEventListeners() {
   )
 
   document.querySelectorAll('.relation-legend .legend-item').forEach(item => {
-    const kind = item.dataset.degree
+  const kind = item.dataset.degree
 
-    item.addEventListener('click', () => {
-      if (kind === '1') {
-        state.showDegree1 = !state.showDegree1
-        item.classList.toggle('disabled', !state.showDegree1)
-      } else if (kind === '2') {
-        state.showDegree2 = !state.showDegree2
-        item.classList.toggle('disabled', !state.showDegree2)
-      } else if (kind === 'pentatonic') {
-        state.showPentatonic = !state.showPentatonic
-        item.classList.toggle('disabled', !state.showPentatonic)
-      } else if (kind === 'tritone') {
-        state.showTritone = !state.showTritone
-        item.classList.toggle('disabled', !state.showTritone)
-      } else if (kind === 'tritoneSub') {
-        state.showTritoneSub = !state.showTritoneSub
-        item.classList.toggle('disabled', !state.showTritoneSub)
-      }
-      drawCircle()
-    })
-
-    // начальное состояние
-    if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
-    if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
-    if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
-    if (kind === 'tritone' && !state.showTritone) item.classList.add('disabled')
-    if (kind === 'tritoneSub' && !state.showTritoneSub) item.classList.add('disabled')
+  item.addEventListener('click', () => {
+    if (kind === '1') {
+      state.showDegree1 = !state.showDegree1
+      item.classList.toggle('disabled', !state.showDegree1)
+    } else if (kind === '2') {
+      state.showDegree2 = !state.showDegree2
+      item.classList.toggle('disabled', !state.showDegree2)
+    } else if (kind === 'pentatonic') {
+      state.showPentatonic = !state.showPentatonic
+      item.classList.toggle('disabled', !state.showPentatonic)
+    } else if (kind === 'tritone') {
+      state.showTritone = !state.showTritone
+      item.classList.toggle('disabled', !state.showTritone)
+    } else if (kind === 'tritoneSub') {
+      state.showTritoneSub = !state.showTritoneSub
+      item.classList.toggle('disabled', !state.showTritoneSub)
+    }
+    drawCircle()
   })
 
-  window.addEventListener('resize', resizeCanvas)
+  // начальное состояние
+  if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
+  if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
+  if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
+  if (kind === 'tritone' && !state.showTritone) item.classList.add('disabled')
+  if (kind === 'tritoneSub' && !state.showTritoneSub) item.classList.add('disabled')
+})
+
+// ⚙️ Переключатель темы — ОДИН раз, ВНЕ forEach
+const themeToggle = document.getElementById('themeToggle')
+if (themeToggle) {
+  themeToggle.addEventListener('click', () => {
+    const html = document.documentElement
+    const isLight = html.getAttribute('data-theme') === 'light'
+    if (isLight) {
+      html.removeAttribute('data-theme')
+      localStorage.setItem('theme', 'dark')
+      themeToggle.querySelector('.theme-icon').textContent = '◐'
+    } else {
+      html.setAttribute('data-theme', 'light')
+      localStorage.setItem('theme', 'light')
+      themeToggle.querySelector('.theme-icon').textContent = '◑'
+    }
+    drawCircle()
+  })
+}
+
+window.addEventListener('resize', resizeCanvas)
 }
 
 // ---------- Инициализация ----------
 
 function init() {
+  // ⚙️ Восстановить тему из localStorage
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light')
+    const icon = document.querySelector('#themeToggle .theme-icon')
+    if (icon) icon.textContent = '◑'
+  }
+
   resizeCanvas()
   setupEventListeners()
   initProgressionsPanel()

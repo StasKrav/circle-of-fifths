@@ -1,6 +1,6 @@
 /* ============================================================
    Квинтовый круг — десктопная версия
-   Layout: flex, круг слева (max), панель 300px справа,
+   Layout: flex, круг слева (max), панель 400px справа,
    скролл только у .progressions-grid
    ============================================================ */
 
@@ -31,6 +31,7 @@
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
 
+  /* ---- Мажорные тональности: плавный спектр по квинтовому кругу ---- */
   --key-c: #6bb8b8; /* 12 ч — бирюза */
   --key-g: #6bb88f; /*  1 ч — зелёно-бирюзовый */
   --key-d: #8fbf6b; /*  2 ч — зелёный */
@@ -49,6 +50,27 @@
 
   /* Цвет минорных тональностей */
   --key-minor: #f0dfaf;
+
+  /* ---- Цвета опций (тёмная тема) ---- */
+  --opt-degree1-fill: rgba(255, 217, 94, 0.3);
+  --opt-degree1-stroke: #ffd95e;
+
+  --opt-degree2-fill: rgba(94, 200, 255, 0.22);
+  --opt-degree2-stroke: #5ec8ff;
+
+  --opt-phantom-fill: rgba(255, 255, 255, 0.22);
+  --opt-phantom-stroke: #c8a0ff;
+  --opt-phantom-text: #c8a0ff;
+
+  --opt-tritone-fill: rgba(124, 184, 187, 0.28);
+  --opt-tritone-stroke: #7cb8bb;
+  --opt-tritone-text: #7cb8bb;
+
+  --opt-ttsub-fill: rgba(192, 96, 192, 0.28);
+  --opt-ttsub-stroke: #ffffff;
+  --opt-ttsub-text: #ffffff;
+
+  --opt-pentatonic-color: #e05050;
 }
 
 * {
@@ -67,7 +89,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--primary-bg);
   color: var(--text-color);
-  transition: background var(--transition-slow);
+  transition: background var(--transition-slow), color var(--transition-slow);
 }
 
 /* ---------- Layout ---------- */
@@ -109,6 +131,40 @@ body {
   cursor: grabbing;
 }
 
+/* ---------- Кнопка темы ---------- */
+
+.theme-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--card-border);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 20;
+  transition: all var(--transition-fast);
+  color: var(--text-color);
+  padding: 0;
+  font-family: inherit;
+}
+
+.theme-toggle:hover {
+  background: var(--hover-bg);
+  transform: scale(1.1);
+}
+
+.theme-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  display: block;
+}
+
 /* ---------- Панель ---------- */
 
 .info-panel {
@@ -130,9 +186,10 @@ body {
   text-align: center;
   padding: 10px 8px;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, rgba(0, 219, 222, 0.1), rgba(252, 0, 255, 0.1));
+  background: var(--card-bg);
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--card-border);
+  transition: background var(--transition-normal), border-color var(--transition-normal);
 }
 
 .selected-key {
@@ -335,13 +392,13 @@ body {
   text-overflow: ellipsis;
 }
 
-/* ---------- Легенда степеней родства ---------- */
+/* ---------- Легенда ---------- */
 
 .relation-legend {
   position: absolute;
   bottom: 8px;
   left: auto;
-  right: 20px; /* отступ от правого края */
+  right: 20px;
   transform: none;
   display: flex;
   gap: 16px;
@@ -382,39 +439,41 @@ body {
   flex-shrink: 0;
 }
 
+/* Свотчи привязаны к цветам опций */
 .legend-swatch.pentatonic-swatch {
   width: 20px;
   height: 4px;
   border-radius: 2px;
   border: none;
-  background: #e05050;
+  background: var(--opt-pentatonic-color);
   box-shadow: none;
 }
 
 .legend-swatch.degree-1 {
-  border-color: #f0dfaf;
-  box-shadow: 0 0 8px rgba(240, 223, 175, 0.6);
+  border-color: var(--opt-degree1-stroke);
+  box-shadow: 0 0 8px var(--opt-degree1-stroke);
 }
 
 .legend-swatch.degree-2 {
-  border-color: #94bff3;
+  border-color: var(--opt-degree2-stroke);
   border-style: dashed;
 }
 
 .legend-swatch.tritone-swatch {
-  border-color: #7cb8bb;
+  border-color: var(--opt-tritone-stroke);
   border-style: dotted;
   border-width: 2px;
 }
+
 .legend-swatch.tritone-sub-swatch {
-  background: #fff;
-  border-color: #fff;
+  background: var(--opt-ttsub-stroke);
+  border-color: var(--opt-ttsub-stroke);
   border-style: solid;
 }
 
 .pentatonic-hint {
   position: absolute;
-  bottom: 40px; /* над relation-legend, если он там */
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -426,6 +485,8 @@ body {
   pointer-events: none;
   z-index: 10;
 }
+
+/* ---------- Пентатоника в панели ---------- */
 
 .pentatonic-section {
   flex-shrink: 0;
@@ -454,19 +515,113 @@ body {
   justify-content: center;
   padding: 4px 2px;
   background: var(--hover-bg);
-  border: 1px solid #e05050; /* красный — как полоска на круге */
+  border: 1px solid var(--opt-pentatonic-color);
   border-radius: 6px;
   line-height: 1.15;
 }
 
 .pentatonic-degree {
   font-size: 0.6rem;
-  color: #ffffff;
+  color: var(--text-color);
   font-weight: normal;
 }
 
 .pentatonic-name {
   font-size: 0.85rem;
   font-weight: bold;
-  color: #ffaaaa;
+  color: var(--text-color);
+}
+
+/* ============================================================
+   Светлая тема
+   ============================================================ */
+
+[data-theme='light'] {
+  --primary-bg: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 50%, #f0f0f0 100%);
+  --text-color: #2a2a2a;
+  --text-secondary: #6a6a6a;
+
+  --accent-primary: #3a7a80;
+  --accent-secondary: #a06a3a;
+
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-border: rgba(80, 80, 80, 0.18);
+  --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+
+  --hover-bg: rgba(80, 140, 150, 0.12);
+  --active-bg: rgba(80, 140, 150, 0.22);
+  --glow-color: rgba(80, 140, 150, 0.35);
+
+  /* Мажорное кольцо — однотонное */
+  --key-c: #a8d0d0;
+  --key-g: #a8d0d0;
+  --key-d: #a8d0d0;
+  --key-a: #a8d0d0;
+  --key-e: #a8d0d0;
+  --key-b: #a8d0d0;
+  --key-fsharp: #a8d0d0;
+  --key-f: #a8d0d0;
+  --key-bb: #a8d0d0;
+  --key-eb: #a8d0d0;
+  --key-ab: #a8d0d0;
+  --key-db: #a8d0d0;
+  --key-gb: #a8d0d0;
+
+  /* Минорное кольцо — однотонное, чуть теплее */
+  --key-minor: #e0d0b0;
+
+  /* ---- Цвета опций (светлая тема — контрастнее) ---- */
+  --opt-degree1-fill: rgba(240, 180, 0, 0.35);
+  --opt-degree1-stroke: #c88a00;
+
+  --opt-degree2-fill: rgba(0, 130, 200, 0.22);
+  --opt-degree2-stroke: #0060a0;
+
+  --opt-phantom-fill: rgba(120, 80, 200, 0.22);
+  --opt-phantom-stroke: #7a50c8;
+  --opt-phantom-text: #5a30a8;
+
+  --opt-tritone-fill: rgba(0, 130, 140, 0.25);
+  --opt-tritone-stroke: #006870;
+  --opt-tritone-text: #006870;
+
+  --opt-ttsub-fill: rgba(160, 60, 160, 0.22);
+  --opt-ttsub-stroke: #803080;
+  --opt-ttsub-text: #803080;
+
+  --opt-pentatonic-color: #c03030;
+}
+
+/* Канвас — без свечения в светлой теме */
+[data-theme='light'] #circleCanvas {
+  filter: none;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+/* Тени и подсветка — мягче */
+[data-theme='light'] .selected-key {
+  text-shadow: none;
+}
+
+[data-theme='light'] .sign-item {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .progression-btn {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .progressions-grid::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Кнопки при hover — тёмный текст на акценте (акцент тёмный) */
+[data-theme='light'] .chord-btn:hover,
+[data-theme='light'] .progression-btn:hover,
+[data-theme='light'] .progression-btn.active {
+  color: #ffffff;
+}
+
+[data-theme='light'] .chord-btn:hover .chord-degree {
+  color: rgba(255, 255, 255, 0.8);
 }
