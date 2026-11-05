@@ -289,7 +289,6 @@ const keySignatures = {
   Gb: { sharps: [], flats: ['Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'] },
 }
 
-
 const state = {
   selectedKey: 'C',
   selectedIsMinor: false,
@@ -305,6 +304,8 @@ const state = {
   showDegree1: false,
   showDegree2: false,
   showPentatonic: false,
+  showTritone: false,
+  showTritoneSub: false,
 }
 
 // ---------- Константы геометрии ----------
@@ -457,9 +458,7 @@ function getActiveRelatedKeys(currentKey, isCurrentMinor) {
 function getMajorColorCSS(majorName) {
   const key = majorName.replace('#', 'sharp').toLowerCase()
   return (
-    getComputedStyle(document.documentElement)
-      .getPropertyValue(`--key-${key}`)
-      .trim() || '#7cb8bb'
+    getComputedStyle(document.documentElement).getPropertyValue(`--key-${key}`).trim() || '#7cb8bb'
   )
 }
 
@@ -703,16 +702,18 @@ function updatePentatonicPanel() {
   const indexes = isMajor ? PENTATONIC_INDEXES_MAJOR : PENTATONIC_INDEXES_MINOR
   const labels = isMajor ? PENTATONIC_LABELS_MAJOR : PENTATONIC_LABELS_MINOR
 
-  container.innerHTML = indexes.map((idx, i) => {
-    const chordName = keyChords[idx]
-    const noteName = chordName.replace(/[m°]/g, '').trim()
-    return `
+  container.innerHTML = indexes
+    .map((idx, i) => {
+      const chordName = keyChords[idx]
+      const noteName = chordName.replace(/[m°]/g, '').trim()
+      return `
       <div class="pentatonic-note">
         <div class="pentatonic-degree">${labels[i]}</div>
         <div class="pentatonic-name">${noteName}</div>
       </div>
     `
-  }).join('')
+    })
+    .join('')
 }
 
 // ---------- Полярный hit-тест ----------
@@ -749,6 +750,124 @@ function getKeyAtPosition(x, y) {
   return null
 }
 
+// -------- Тритон -----------
+
+function drawTritone(cx, cy) {
+  if (!state.showTritone) return
+
+  const r = getRadii()
+
+  // Найти тонику (сектор, на котором сейчас выбранная тональность)
+  const tonic = circleData.keys.find(k =>
+    state.selectedIsMinor ? k.minor === state.selectedKey : k.major === state.selectedKey,
+  )
+  if (!tonic) return
+
+  // Тритон — ровно напротив (180°)
+  const tritoneAngle = tonic.angle + Math.PI + state.rotation
+
+  // Подсветить в ОБОИХ кольцах (тритон от ноты не зависит от лада)
+  const HALF = SEGMENT_HALF - 0.03
+
+  const drawTritoneSector = (rIn, rOut) => {
+    ctx.beginPath()
+    ctx.arc(cx, cy, rOut, tritoneAngle - HALF, tritoneAngle + HALF)
+    ctx.arc(cx, cy, rIn, tritoneAngle + HALF, tritoneAngle - HALF, true)
+    ctx.closePath()
+    ctx.fillStyle = 'rgba(124, 184, 187, 0.28)'
+    ctx.fill()
+    ctx.strokeStyle = '#7cb8bb'
+    ctx.lineWidth = 2
+    ctx.setLineDash([3, 3])
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
+
+  drawTritoneSector(r.innerMajor, r.outerMajor)
+
+  // Подпись «TT» внутри мажорного тритона
+  const midR = (r.innerMajor + r.outerMajor) / 2
+  const lx = cx + Math.cos(tritoneAngle) * midR
+  const ly = cy + Math.sin(tritoneAngle) * midR
+  ctx.fillStyle = '#7cb8bb'
+  ctx.font = 'bold 12px Arial'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+}
+
+// --------- TT-sub ----------
+
+function drawTritoneSub(cx, cy) {
+  if (!state.showTritoneSub) return
+
+  const r = getRadii()
+  const isMinor = state.selectedIsMinor
+
+  // Углы: V и ♭II7 в мажорном кольце
+  const vAngle = isMinor
+    ? -Math.PI / 2 + (4 * Math.PI) / 6 // 4ч
+    : -Math.PI / 2 + Math.PI / 6 // 1ч
+  const subVAngle = isMinor
+    ? -Math.PI / 2 + (10 * Math.PI) / 6 // 10ч
+    : -Math.PI / 2 + (7 * Math.PI) / 6 // 7ч
+
+  const HALF = SEGMENT_HALF - 0.03
+  const rIn = r.innerMajor
+  const rOut = r.outerMajor
+
+  // Цвет — фиолетово-розовый, чтобы отличать от других зон
+  const COLOR = '#ffffff'
+  const FILL = 'rgba(192, 96, 192, 0.28)'
+
+  // Рисуем сектор
+  const drawSector = angle => {
+    ctx.beginPath()
+    ctx.arc(cx, cy, rOut, angle - HALF, angle + HALF)
+    ctx.arc(cx, cy, rIn, angle + HALF, angle - HALF, true)
+    ctx.closePath()
+    ctx.fillStyle = FILL
+    ctx.fill()
+    ctx.strokeStyle = COLOR
+    ctx.lineWidth = 2.5
+    ctx.stroke()
+  }
+
+  drawSector(vAngle)
+  drawSector(subVAngle)
+
+  // Линия между центрами секторов через центр круга
+  const midR = (rIn + rOut) / 2
+  const x1 = cx + Math.cos(vAngle) * midR
+  const y1 = cy + Math.sin(vAngle) * midR
+  const x2 = cx + Math.cos(subVAngle) * midR
+  const y2 = cy + Math.sin(subVAngle) * midR
+
+  ctx.strokeStyle = COLOR
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 4])
+  ctx.beginPath()
+  ctx.moveTo(x1, y1)
+  ctx.lineTo(x2, y2)
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  // Подписи
+  const drawLabel = (angle, text) => {
+    // Размещаем в центре сектора, но сдвигаем к внешнему краю
+    const labelR = midR + (rOut - rIn) * 0.28
+    const lx = cx + Math.cos(angle) * labelR
+    const ly = cy + Math.sin(angle) * labelR
+    ctx.fillStyle = COLOR
+    ctx.font = 'bold 11px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, lx, ly)
+  }
+
+  drawLabel(vAngle, 'V7')
+  drawLabel(subVAngle, '♭II7')
+}
+
 // ---------- Рисование ----------
 
 function drawWedge(
@@ -782,9 +901,9 @@ function drawWedge(
 function drawRelationWedges(cx, cy) {
   const r = getRadii()
   const tonicAngle = -Math.PI / 2
-  const HALF_1ST = Math.PI / 4          // 45° — 3 сектора (11ч, 12ч, 1ч)
-  const HALF_2ND = Math.PI / 12         // 15° — 1 сектор (10ч или 2ч)
-  const OFFSET_2ND = Math.PI / 3        // 60° — центр на 10ч / 2ч
+  const HALF_1ST = Math.PI / 4 // 45° — 3 сектора (11ч, 12ч, 1ч)
+  const HALF_2ND = Math.PI / 12 // 15° — 1 сектор (10ч или 2ч)
+  const OFFSET_2ND = Math.PI / 3 // 60° — центр на 10ч / 2ч
 
   // ═══ 1-я степень: 3 сектора по центру тоники ═══
   if (state.showDegree1) {
@@ -807,14 +926,14 @@ function drawRelationWedges(cx, cy) {
       drawWedge(cx, cy, r.innerMajor, r.outerMajor, center, HALF_2ND, {
         fill: 'rgba(94, 200, 255, 0.22)',
         stroke: '#5ec8ff',
-        lineWidth: 2,
-        dash: [4, 3],
+        lineWidth: 4,
+        dash: [8, 5],
       })
       drawWedge(cx, cy, r.innerMinor, r.outerMinor, center, HALF_2ND, {
         fill: 'rgba(94, 200, 255, 0.22)',
         stroke: '#5ec8ff',
-        lineWidth: 2,
-        dash: [4, 3],
+        lineWidth: 4,
+        dash: [8, 5],
       })
     })
   }
@@ -826,14 +945,14 @@ function drawPhantomNotes(cx, cy) {
 
   // Тоника на 12ч (после snap) — призрачная нота всегда на фиксированном угле
   const a = state.selectedIsMinor
-    ? -Math.PI / 2 + (4 * Math.PI) / 6    // минор → 04:00 в мажорном кольце
-    : -Math.PI / 2 - (4 * Math.PI) / 6    // мажор → 08:00 в минорном кольце
+    ? -Math.PI / 2 + (4 * Math.PI) / 6 // минор → 04:00 в мажорном кольце
+    : -Math.PI / 2 - (4 * Math.PI) / 6 // мажор → 08:00 в минорном кольце
 
   // Кольцо: для мажора — минорное, для минора — мажорное
   const rIn = state.selectedIsMinor ? r.innerMajor : r.innerMinor
   const rOut = state.selectedIsMinor ? r.outerMajor : r.outerMinor
 
-  const HALF = SEGMENT_HALF - 0.03   // чуть уже сектора
+  const HALF = SEGMENT_HALF - 0.03 // чуть уже сектора
 
   // 1. Полупрозрачная заливка
   ctx.beginPath()
@@ -845,8 +964,8 @@ function drawPhantomNotes(cx, cy) {
 
   // 2. Пунктирная фиолетовая обводка
   ctx.strokeStyle = '#c8a0ff'
-  ctx.lineWidth = 2
-  ctx.setLineDash([4, 4])
+  ctx.lineWidth = 4
+  ctx.setLineDash([8, 5])
   ctx.stroke()
   ctx.setLineDash([])
 
@@ -868,8 +987,10 @@ function drawCircle() {
   ctx.clearRect(0, 0, w, h)
   drawBackgroundCircles(w / 2, h / 2)
   drawSegments(w / 2, h / 2)
-  drawPhantomNotes(w / 2, h / 2)         // ⚙️ призрачные — статично
+  drawPhantomNotes(w / 2, h / 2)
   drawPentatonicStripes(w / 2, h / 2)
+  drawTritone(w / 2, h / 2)
+  drawTritoneSub(w / 2, h / 2) // ⚙️
   drawRelationWedges(w / 2, h / 2)
   drawProgressionArrows()
 }
@@ -1086,16 +1207,14 @@ function drawSegments(cx, cy) {
   })
 }
 
-
-
 function drawPentatonicStripes(cx, cy) {
-  if (!state.showPentatonic) return 
+  if (!state.showPentatonic) return
   const r = getRadii()
 
   // Дуга от 12 до 16 часов — фиксированная, не зависит от вращения.
   // 12ч = -π/2, 16ч = -π/2 + 4·(π/6) = -π/2 + 2π/3
   const a0 = -Math.PI / 2
-  const a1 = -Math.PI / 2 + (4 * Math.PI) / 6   // 4 сектора по 30°
+  const a1 = -Math.PI / 2 + (4 * Math.PI) / 6 // 4 сектора по 30°
 
   ctx.beginPath()
   ctx.arc(cx, cy, r.pentatonicOuter, a0, a1)
@@ -1299,27 +1418,35 @@ function setupEventListeners() {
   )
 
   document.querySelectorAll('.relation-legend .legend-item').forEach(item => {
-  const kind = item.dataset.degree    // '1', '2' или 'pentatonic'
+    const kind = item.dataset.degree
 
-  item.addEventListener('click', () => {
-    if (kind === '1') {
-      state.showDegree1 = !state.showDegree1
-      item.classList.toggle('disabled', !state.showDegree1)
-    } else if (kind === '2') {
-      state.showDegree2 = !state.showDegree2
-      item.classList.toggle('disabled', !state.showDegree2)
-    } else if (kind === 'pentatonic') {
-      state.showPentatonic = !state.showPentatonic
-      item.classList.toggle('disabled', !state.showPentatonic)
-    }
-    drawCircle()
+    item.addEventListener('click', () => {
+      if (kind === '1') {
+        state.showDegree1 = !state.showDegree1
+        item.classList.toggle('disabled', !state.showDegree1)
+      } else if (kind === '2') {
+        state.showDegree2 = !state.showDegree2
+        item.classList.toggle('disabled', !state.showDegree2)
+      } else if (kind === 'pentatonic') {
+        state.showPentatonic = !state.showPentatonic
+        item.classList.toggle('disabled', !state.showPentatonic)
+      } else if (kind === 'tritone') {
+        state.showTritone = !state.showTritone
+        item.classList.toggle('disabled', !state.showTritone)
+      } else if (kind === 'tritoneSub') {
+        state.showTritoneSub = !state.showTritoneSub
+        item.classList.toggle('disabled', !state.showTritoneSub)
+      }
+      drawCircle()
+    })
+
+    // начальное состояние
+    if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
+    if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
+    if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
+    if (kind === 'tritone' && !state.showTritone) item.classList.add('disabled')
+    if (kind === 'tritoneSub' && !state.showTritoneSub) item.classList.add('disabled')
   })
-
-  // начальное состояние
-  if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
-  if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
-  if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
-})
 
   window.addEventListener('resize', resizeCanvas)
 }

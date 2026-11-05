@@ -401,6 +401,17 @@ body {
   border-style: dashed;
 }
 
+.legend-swatch.tritone-swatch {
+  border-color: #7cb8bb;
+  border-style: dotted;
+  border-width: 2px;
+}
+.legend-swatch.tritone-sub-swatch {
+  background: #fff;
+  border-color: #fff;
+  border-style: solid;
+}
+
 .pentatonic-hint {
   position: absolute;
   bottom: 40px; /* над relation-legend, если он там */
