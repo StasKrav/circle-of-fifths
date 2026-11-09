@@ -315,6 +315,33 @@ const ANIMATION_DAMPING = 0.9
 const DRAG_SENSITIVITY = 0.008
 const SEGMENT_HALF = Math.PI / 12 // половина сектора (15°)
 
+
+// Функция каждой ступени (мажор/минор)
+const DEGREE_FUNCTION_MAJOR = ['T', 'S', 'T', 'S', 'D', 'T', 'D']
+const DEGREE_FUNCTION_MINOR = ['T', 'S', 'T', 'S', 'D', 'T', 'D']
+
+// Функциональные замены (индексы в chords[key])
+const FUNCTIONAL_SUBS_MAJOR = {
+  0: [2, 5],   // I  → iii, vi
+  1: [3],      // ii → IV
+  2: [0, 5],   // iii → I, vi
+  3: [1],      // IV → ii
+  4: [6],      // V  → vii°
+  5: [0, 2],   // vi → I, iii
+  6: [4],      // vii° → V
+}
+const FUNCTIONAL_SUBS_MINOR = {
+  0: [2, 5],   // i   → III, VI
+  1: [3],      // ii° → iv
+  2: [0, 5],   // III → i, VI
+  3: [1],      // iv  → ii°
+  4: [6],      // v   → VII
+  5: [0, 2],   // VI  → i, III
+  6: [4],      // VII → v
+}
+
+
+
 // ---------- DOM ----------
 
 const canvas = document.getElementById('circleCanvas')
@@ -527,6 +554,61 @@ function animateToKeySmart(targetKeyName) {
   state.animationId = requestAnimationFrame(animate)
 }
 
+
+// --------- Замены ---------
+
+function updateSubstitutionsPanel() {
+  const container = document.getElementById('substitutionsList')
+  if (!container) return
+
+  const isMajor = !state.selectedIsMinor
+  const keyName = state.selectedKey
+  const keyChords = chords[keyName] || []
+  const degrees = chordDegrees[keyName] || []
+  if (keyChords.length < 7) {
+    container.innerHTML = ''
+    return
+  }
+
+  const subsMap = isMajor ? FUNCTIONAL_SUBS_MAJOR : FUNCTIONAL_SUBS_MINOR
+  const funcs = isMajor ? DEGREE_FUNCTION_MAJOR : DEGREE_FUNCTION_MINOR
+
+  const rows = keyChords.map((chord, idx) => {
+    const degree = degrees[idx]
+    const func = funcs[idx]
+    const subs = (subsMap[idx] || []).map(i => `${keyChords[i]} (${degrees[i]})`)
+    const subsText = subs.length ? subs.join(', ') : '—'
+
+    // Доп. замены
+    const extras = []
+
+    // Тритоновая для доминант (V и vii°)
+    if (func === 'D' && (idx === 4 || idx === 6)) {
+      // Для C-dur: V (G) → ♭II (Db); vii° (B°) → ♭II7 (Db7)
+      // Находим ♭II по позиции: тоника - 1 полутон, но на круге проще — "напротив V"
+      extras.push('♭II7 (TT)')
+    }
+
+    // Уменьшенный vii° → 4 эквивалента
+    if (chord.includes('°') && idx === 6) {
+      extras.push('4 энгармонизма')
+    }
+
+    const extraText = extras.length ? extras.join(', ') : ''
+
+    return `
+      <div class="sub-row">
+        <div class="sub-degree">${degree}</div>
+        <div class="sub-chord">${chord}</div>
+        <div class="sub-func">${func}</div>
+        <div class="sub-alts">${subsText}${extraText ? ' · ' + extraText : ''}</div>
+      </div>
+    `
+  })
+
+  container.innerHTML = rows.join('')
+}
+
 // ---------- Инфо о тональности (панель) ----------
 
 function updateTopKeyInfo() {
@@ -546,6 +628,7 @@ function updateTopKeyInfo() {
   }
   updateKeySignatures(keySignatures[topKey.major] || { sharps: [], flats: [] })
   updatePentatonicPanel()
+  updateSubstitutionsPanel()
 }
 
 function updateKeySignatures(signs) {
@@ -1415,6 +1498,23 @@ function setupEventListeners() {
     canvas.style.cursor = state.hoveredKey ? 'pointer' : 'grab'
   })
 
+  // ⚙️ Вкладки панели
+  document.querySelectorAll('.panel-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab
+
+      // кнопки
+      document.querySelectorAll('.panel-tab').forEach(t => {
+        t.classList.toggle('active', t === tab)
+      })
+
+      // контент
+      document.querySelectorAll('.panel-tab-content').forEach(c => {
+        c.classList.toggle('active', c.dataset.tabContent === target)
+      })
+    })
+  })
+
   canvas.addEventListener(
     'wheel',
     e => {
@@ -1434,56 +1534,56 @@ function setupEventListeners() {
   )
 
   document.querySelectorAll('.relation-legend .legend-item').forEach(item => {
-  const kind = item.dataset.degree
+    const kind = item.dataset.degree
 
-  item.addEventListener('click', () => {
-    if (kind === '1') {
-      state.showDegree1 = !state.showDegree1
-      item.classList.toggle('disabled', !state.showDegree1)
-    } else if (kind === '2') {
-      state.showDegree2 = !state.showDegree2
-      item.classList.toggle('disabled', !state.showDegree2)
-    } else if (kind === 'pentatonic') {
-      state.showPentatonic = !state.showPentatonic
-      item.classList.toggle('disabled', !state.showPentatonic)
-    } else if (kind === 'tritone') {
-      state.showTritone = !state.showTritone
-      item.classList.toggle('disabled', !state.showTritone)
-    } else if (kind === 'tritoneSub') {
-      state.showTritoneSub = !state.showTritoneSub
-      item.classList.toggle('disabled', !state.showTritoneSub)
-    }
-    drawCircle()
+    item.addEventListener('click', () => {
+      if (kind === '1') {
+        state.showDegree1 = !state.showDegree1
+        item.classList.toggle('disabled', !state.showDegree1)
+      } else if (kind === '2') {
+        state.showDegree2 = !state.showDegree2
+        item.classList.toggle('disabled', !state.showDegree2)
+      } else if (kind === 'pentatonic') {
+        state.showPentatonic = !state.showPentatonic
+        item.classList.toggle('disabled', !state.showPentatonic)
+      } else if (kind === 'tritone') {
+        state.showTritone = !state.showTritone
+        item.classList.toggle('disabled', !state.showTritone)
+      } else if (kind === 'tritoneSub') {
+        state.showTritoneSub = !state.showTritoneSub
+        item.classList.toggle('disabled', !state.showTritoneSub)
+      }
+      drawCircle()
+    })
+
+    // начальное состояние
+    if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
+    if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
+    if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
+    if (kind === 'tritone' && !state.showTritone) item.classList.add('disabled')
+    if (kind === 'tritoneSub' && !state.showTritoneSub) item.classList.add('disabled')
   })
 
-  // начальное состояние
-  if (kind === '1' && !state.showDegree1) item.classList.add('disabled')
-  if (kind === '2' && !state.showDegree2) item.classList.add('disabled')
-  if (kind === 'pentatonic' && !state.showPentatonic) item.classList.add('disabled')
-  if (kind === 'tritone' && !state.showTritone) item.classList.add('disabled')
-  if (kind === 'tritoneSub' && !state.showTritoneSub) item.classList.add('disabled')
-})
+  // ⚙️ Переключатель темы — ОДИН раз, ВНЕ forEach
+  const themeToggle = document.getElementById('themeToggle')
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const html = document.documentElement
+      const isLight = html.getAttribute('data-theme') === 'light'
+      if (isLight) {
+        html.removeAttribute('data-theme')
+        localStorage.setItem('theme', 'dark')
+        themeToggle.querySelector('.theme-icon').textContent = '◐'
+      } else {
+        html.setAttribute('data-theme', 'light')
+        localStorage.setItem('theme', 'light')
+        themeToggle.querySelector('.theme-icon').textContent = '◑'
+      }
+      drawCircle()
+    })
+  }
 
-// ⚙️ Переключатель темы — ОДИН раз, ВНЕ forEach
-const themeToggle = document.getElementById('themeToggle')
-if (themeToggle) {
-  themeToggle.addEventListener('click', () => {
-    const html = document.documentElement
-    const isLight = html.getAttribute('data-theme') === 'light'
-    if (isLight) {
-      html.removeAttribute('data-theme')
-      localStorage.setItem('theme', 'dark')
-      themeToggle.querySelector('.theme-icon').textContent = '◐'
-    } else {
-      html.setAttribute('data-theme', 'light')
-      localStorage.setItem('theme', 'light')
-      themeToggle.querySelector('.theme-icon').textContent = '◑'
-    }
-    drawCircle()
-  })
-}
-
-window.addEventListener('resize', resizeCanvas)
+  window.addEventListener('resize', resizeCanvas)
 }
 
 // ---------- Инициализация ----------
